@@ -331,11 +331,11 @@ export default function Canvas() {
       <div className="md:hidden flex flex-col min-h-[100svh] max-w-[414px] mx-auto px-4 pt-3 pb-[140px]"
         onClick={() => setIsUIVisible(true)}
       >
-        {/* 모바일 헤더 */}
-        <div className={`flex justify-between items-center mb-3 transition-all duration-300 ${uiShowHide}`}
+        {/* 모바일 헤더 — 항상 표시 */}
+        <div className="flex justify-between items-center mb-3"
           onClick={(e) => e.stopPropagation()}
         >
-          <h1 className="font-headline text-2xl font-black text-on-background tracking-tighter">내 캔버스</h1>
+          <h1 className={`font-headline text-2xl font-black text-on-background tracking-tighter transition-all duration-300 ${uiShowHide}`}>내 캔버스</h1>
           <div className="flex gap-2">
             <button onClick={saveToJournal}
               className={`${toolBtnBase} px-3 bg-surface-container-highest text-on-surface sticker-shadow-hover`}>
@@ -440,9 +440,9 @@ export default function Canvas() {
       <div className="hidden md:block">
         <div className="max-w-6xl mx-auto px-6 py-10">
 
-          {/* 데스크탑 헤더 */}
-          <div className={`flex justify-between items-end gap-6 mb-8 transition-all duration-300 ${uiShowHide}`}>
-            <div>
+          {/* 데스크탑 헤더 — 제목/영감은 숨김 가능, 버튼은 항상 표시 */}
+          <div className="flex justify-between items-end gap-6 mb-8">
+            <div className={`transition-all duration-300 ${uiShowHide}`}>
               <h1 className="font-headline text-5xl font-black text-on-background tracking-tighter mb-3">내 캔버스</h1>
               <div className="flex items-center gap-3 bg-tertiary-container/20 text-on-tertiary-container px-5 py-2.5 rounded-full border border-tertiary-container/30 text-base keep-all">
                 <span className="material-symbols-outlined text-xl">lightbulb</span>

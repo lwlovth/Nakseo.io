@@ -15,24 +15,36 @@ const brushSizes = [2, 6, 14]
 const CANVAS_SIZE = 600
 
 export default function Canvas() {
+  // ── UI state (리렌더 필요한 것만) ──
   const [activeTool,      setActiveTool]      = useState('pencil')
   const [activeColor,     setActiveColor]     = useState('#9B4500')
   const [activeSize,      setActiveSize]      = useState(1)
   const [showColorPicker, setShowColorPicker] = useState(false)
   const [hexInput,        setHexInput]        = useState('#9B4500')
   const [isUIVisible,     setIsUIVisible]     = useState(true)
-  const { setIsDrawing } = useUI()
 
-  const canvasRef       = useRef(null)
-  const pickerRef       = useRef(null)
+  // ── Context ──
+  const { setIsDrawing: setGlobalDrawing } = useUI()
+
+  // ── 드로잉 전용 refs (stale closure 방지 — 항상 최신값) ──
+  const toolRef      = useRef('pencil')
+  const colorRef     = useRef('#9B4500')
+  const sizeRef      = useRef(1)
+  const canvasRef    = useRef(null)
+  const pickerRef    = useRef(null)
   const mobilePickerRef = useRef(null)
-  const isDrawing       = useRef(false)
-  const lastPoint       = useRef(null)
-  const history         = useRef([])
-  const historyStep     = useRef(-1)
-  const navigate        = useNavigate()
+  const isDrawingRef = useRef(false)
+  const lastPoint    = useRef(null)
+  const history      = useRef([])
+  const historyStep  = useRef(-1)
+  const navigate     = useNavigate()
 
-  /* ── 캔버스 초기화 ── */
+  // state가 바뀔 때 ref도 동기화
+  useEffect(() => { toolRef.current  = activeTool  }, [activeTool])
+  useEffect(() => { colorRef.current = activeColor }, [activeColor])
+  useEffect(() => { sizeRef.current  = activeSize  }, [activeSize])
+
+  // ── 캔버스 초기화 ──
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
@@ -42,23 +54,7 @@ export default function Canvas() {
     saveHistory()
   }, [])
 
-  /* ── passive:false 터치 이벤트 등록 (React 기본 passive 이벤트 우회) ── */
-  useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const opts = { passive: false }
-    canvas.addEventListener('touchstart', startDraw, opts)
-    canvas.addEventListener('touchmove',  draw,      opts)
-    canvas.addEventListener('touchend',   stopDraw)
-    return () => {
-      canvas.removeEventListener('touchstart', startDraw)
-      canvas.removeEventListener('touchmove',  draw)
-      canvas.removeEventListener('touchend',   stopDraw)
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTool, activeColor, activeSize])
-
-  /* ── 히스토리 ── */
+  // ── 히스토리 ──
   const saveHistory = useCallback(() => {
     const canvas = canvasRef.current
     if (!canvas) return
@@ -67,7 +63,7 @@ export default function Canvas() {
     historyStep.current = history.current.length - 1
   }, [])
 
-  const restoreStep = (step) => {
+  const restoreStep = useCallback((step) => {
     const img = new Image()
     img.src = history.current[step]
     img.onload = () => {
@@ -76,22 +72,27 @@ export default function Canvas() {
       ctx.globalCompositeOperation = 'source-over'
       ctx.drawImage(img, 0, 0)
     }
-  }
+  }, [])
 
-  const undo = () => { if (historyStep.current > 0) restoreStep(--historyStep.current) }
-  const redo = () => { if (historyStep.current < history.current.length - 1) restoreStep(++historyStep.current) }
+  const undo = useCallback(() => {
+    if (historyStep.current > 0) restoreStep(--historyStep.current)
+  }, [restoreStep])
 
-  const clearCanvas = () => {
+  const redo = useCallback(() => {
+    if (historyStep.current < history.current.length - 1) restoreStep(++historyStep.current)
+  }, [restoreStep])
+
+  const clearCanvas = useCallback(() => {
     const ctx = canvasRef.current.getContext('2d')
     ctx.globalAlpha = 1
     ctx.globalCompositeOperation = 'source-over'
     ctx.fillStyle = '#FFF9F0'
     ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE)
     saveHistory()
-  }
+  }, [saveHistory])
 
-  /* ── 좌표 변환 ── */
-  const getPos = (e) => {
+  // ── 좌표 변환 ──
+  const getPos = useCallback((e) => {
     const canvas = canvasRef.current
     const rect   = canvas.getBoundingClientRect()
     const scale  = CANVAS_SIZE / rect.width
@@ -103,37 +104,37 @@ export default function Canvas() {
       x: (e.clientX - rect.left) * scale,
       y: (e.clientY - rect.top)  * scale,
     }
-  }
+  }, [])
 
-  /* ── 도구 스타일 ── */
-  const applyToolStyle = (ctx) => {
-    const size = brushSizes[activeSize]
+  // ── 도구 스타일 (ref 기반) ──
+  const applyToolStyle = useCallback((ctx) => {
+    const size = brushSizes[sizeRef.current]
     ctx.lineCap  = 'round'
     ctx.lineJoin = 'round'
     ctx.setLineDash([])
     ctx.globalCompositeOperation = 'source-over'
-    if (activeTool === 'eraser') {
+    if (toolRef.current === 'eraser') {
       ctx.strokeStyle = '#FFF9F0'
       ctx.fillStyle   = '#FFF9F0'
       ctx.lineWidth   = size * 4
       ctx.globalAlpha = 1
     } else {
-      ctx.strokeStyle = activeColor
-      ctx.fillStyle   = activeColor
+      ctx.strokeStyle = colorRef.current
+      ctx.fillStyle   = colorRef.current
       ctx.lineWidth   = size
       ctx.globalAlpha = 0.9
     }
-  }
+  }, [])
 
-  /* ── 목탄 텍스처 ── */
-  const drawCharcoal = (ctx, from, to) => {
-    const size = brushSizes[activeSize]
-    const dx   = to.x - from.x
-    const dy   = to.y - from.y
+  // ── 목탄 텍스처 (ref 기반) ──
+  const drawCharcoal = useCallback((ctx, from, to) => {
+    const size  = brushSizes[sizeRef.current]
+    const dx    = to.x - from.x
+    const dy    = to.y - from.y
     const dist  = Math.max(1, Math.sqrt(dx * dx + dy * dy))
     const steps = Math.ceil(dist / 3)
     ctx.globalCompositeOperation = 'source-over'
-    ctx.fillStyle = activeColor
+    ctx.fillStyle = colorRef.current
     for (let i = 0; i <= steps; i++) {
       const t  = i / steps
       const cx = from.x + dx * t
@@ -148,24 +149,28 @@ export default function Canvas() {
       }
     }
     ctx.globalAlpha = 1
-  }
+  }, [])
 
-  /* ── 색상 유틸 ── */
-  const hexToRgb = (hex) => ({
+  // ── 색상 유틸 ──
+  const hexToRgb = useCallback((hex) => ({
     r: parseInt(hex.slice(1, 3), 16),
     g: parseInt(hex.slice(3, 5), 16),
     b: parseInt(hex.slice(5, 7), 16),
-  })
+  }), [])
 
-  const rgbToHex = (r, g, b) =>
-    '#' + [r, g, b].map(v => Math.max(0, Math.min(255, v)).toString(16).padStart(2, '0')).join('')
+  const handleRgb = useCallback((ch, val) => {
+    setActiveColor(prev => {
+      const cur = {
+        r: parseInt(prev.slice(1, 3), 16),
+        g: parseInt(prev.slice(3, 5), 16),
+        b: parseInt(prev.slice(5, 7), 16),
+      }
+      cur[ch] = parseInt(val)
+      return '#' + [cur.r, cur.g, cur.b].map(v => Math.max(0, Math.min(255, v)).toString(16).padStart(2, '0')).join('')
+    })
+  }, [])
 
-  const handleRgb = (ch, val) => {
-    const cur  = hexToRgb(activeColor)
-    setActiveColor(rgbToHex({ ...cur, [ch]: parseInt(val) }.r, { ...cur, [ch]: parseInt(val) }.g, { ...cur, [ch]: parseInt(val) }.b))
-  }
-
-  /* ── 플러드 필 ── */
+  // ── 플러드 필 (ref 기반) ──
   const floodFill = useCallback((startX, startY) => {
     const canvas = canvasRef.current
     const ctx    = canvas.getContext('2d')
@@ -174,41 +179,44 @@ export default function Canvas() {
     const sx     = Math.floor(Math.max(0, Math.min(CANVAS_SIZE - 1, startX)))
     const sy     = Math.floor(Math.max(0, Math.min(CANVAS_SIZE - 1, startY)))
     const sp     = sy * CANVAS_SIZE + sx
-    const tR = data[sp * 4], tG = data[sp * 4 + 1], tB = data[sp * 4 + 2]
-    const fill   = hexToRgb(activeColor)
+    const tR = data[sp*4], tG = data[sp*4+1], tB = data[sp*4+2]
+    const fill = {
+      r: parseInt(colorRef.current.slice(1, 3), 16),
+      g: parseInt(colorRef.current.slice(3, 5), 16),
+      b: parseInt(colorRef.current.slice(5, 7), 16),
+    }
     if (tR === fill.r && tG === fill.g && tB === fill.b) return
     const tol     = 30
     const matches = (p) =>
-      Math.abs(data[p*4]-tR) <= tol && Math.abs(data[p*4+1]-tG) <= tol && Math.abs(data[p*4+2]-tB) <= tol
+      Math.abs(data[p*4]-tR)<=tol && Math.abs(data[p*4+1]-tG)<=tol && Math.abs(data[p*4+2]-tB)<=tol
     const visited = new Uint8Array(CANVAS_SIZE * CANVAS_SIZE)
     const stack   = [sp]
     while (stack.length) {
       const pos = stack.pop()
       if (visited[pos] || !matches(pos)) continue
       visited[pos] = 1
-      data[pos*4] = fill.r; data[pos*4+1] = fill.g; data[pos*4+2] = fill.b; data[pos*4+3] = 255
+      data[pos*4]=fill.r; data[pos*4+1]=fill.g; data[pos*4+2]=fill.b; data[pos*4+3]=255
       const x = pos % CANVAS_SIZE, y = Math.floor(pos / CANVAS_SIZE)
-      if (x > 0) stack.push(pos - 1)
-      if (x < CANVAS_SIZE - 1) stack.push(pos + 1)
-      if (y > 0) stack.push(pos - CANVAS_SIZE)
-      if (y < CANVAS_SIZE - 1) stack.push(pos + CANVAS_SIZE)
+      if (x > 0) stack.push(pos-1)
+      if (x < CANVAS_SIZE-1) stack.push(pos+1)
+      if (y > 0) stack.push(pos-CANVAS_SIZE)
+      if (y < CANVAS_SIZE-1) stack.push(pos+CANVAS_SIZE)
     }
     ctx.putImageData(imageData, 0, 0)
     saveHistory()
-  }, [activeColor, saveHistory])
+  }, [saveHistory])
 
-  /* ── 드로잉 이벤트 ── */
-  const startDraw = (e) => {
-    // 터치 시 페이지 스크롤만 방지 (드로잉 이벤트는 유지)
+  // ── 드로잉 핸들러 (useCallback + deps [] — ref로 최신값 읽음) ──
+  const startDraw = useCallback((e) => {
     if (e.cancelable) e.preventDefault()
     setIsUIVisible(false)
-    setIsDrawing(true)
+    setGlobalDrawing(true)
     const pos = getPos(e)
-    if (activeTool === 'finetip') { floodFill(pos.x, pos.y); return }
-    isDrawing.current  = true
-    lastPoint.current  = pos
+    if (toolRef.current === 'finetip') { floodFill(pos.x, pos.y); return }
+    isDrawingRef.current = true
+    lastPoint.current    = pos
     const ctx = canvasRef.current.getContext('2d')
-    if (activeTool === 'charcoal') {
+    if (toolRef.current === 'charcoal') {
       drawCharcoal(ctx, pos, pos)
     } else {
       applyToolStyle(ctx)
@@ -216,15 +224,15 @@ export default function Canvas() {
       ctx.arc(pos.x, pos.y, ctx.lineWidth / 2, 0, Math.PI * 2)
       ctx.fill()
     }
-  }
+  }, [getPos, floodFill, drawCharcoal, applyToolStyle, setGlobalDrawing])
 
-  const draw = (e) => {
+  const draw = useCallback((e) => {
     if (e.cancelable) e.preventDefault()
-    if (!isDrawing.current || !lastPoint.current) return
-    if (activeTool === 'finetip') return
+    if (!isDrawingRef.current || !lastPoint.current) return
+    if (toolRef.current === 'finetip') return
     const ctx = canvasRef.current.getContext('2d')
     const pos = getPos(e)
-    if (activeTool === 'charcoal') {
+    if (toolRef.current === 'charcoal') {
       drawCharcoal(ctx, lastPoint.current, pos)
     } else {
       applyToolStyle(ctx)
@@ -234,25 +242,41 @@ export default function Canvas() {
       ctx.stroke()
     }
     lastPoint.current = pos
-  }
+  }, [getPos, drawCharcoal, applyToolStyle])
 
-  const stopDraw = () => {
-    if (!isDrawing.current) return
-    isDrawing.current = false
-    lastPoint.current = null
+  const stopDraw = useCallback(() => {
+    if (!isDrawingRef.current) return
+    isDrawingRef.current = false
+    lastPoint.current    = null
     saveHistory()
     setIsUIVisible(true)
-    setIsDrawing(false)
-  }
+    setGlobalDrawing(false)
+  }, [saveHistory, setGlobalDrawing])
 
-  /* ── HEX 입력 ── */
-  const handleHexInput = (val) => {
+  // ── passive:false 터치 이벤트 등록 (안정된 함수 참조 사용) ──
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const opts = { passive: false }
+    canvas.addEventListener('touchstart', startDraw, opts)
+    canvas.addEventListener('touchmove',  draw,      opts)
+    canvas.addEventListener('touchend',   stopDraw)
+    return () => {
+      canvas.removeEventListener('touchstart', startDraw)
+      canvas.removeEventListener('touchmove',  draw)
+      canvas.removeEventListener('touchend',   stopDraw)
+    }
+  }, [startDraw, draw, stopDraw])
+
+  // ── HEX 입력 ──
+  const handleHexInput = useCallback((val) => {
     setHexInput(val)
     if (/^#[0-9a-fA-F]{6}$/.test(val)) setActiveColor(val)
-  }
+  }, [])
+
   useEffect(() => { setHexInput(activeColor) }, [activeColor])
 
-  /* ── 피커 외부 클릭 닫기 ── */
+  // ── 피커 외부 클릭 닫기 ──
   useEffect(() => {
     if (!showColorPicker) return
     const close = (e) => {
@@ -261,24 +285,27 @@ export default function Canvas() {
     }
     document.addEventListener('mousedown', close)
     document.addEventListener('touchstart', close)
-    return () => { document.removeEventListener('mousedown', close); document.removeEventListener('touchstart', close) }
+    return () => {
+      document.removeEventListener('mousedown', close)
+      document.removeEventListener('touchstart', close)
+    }
   }, [showColorPicker])
 
   const rgb = hexToRgb(activeColor)
 
-  const saveToJournal = () => {
+  const saveToJournal = useCallback(() => {
     const link = document.createElement('a')
     link.download = `doodle-${Date.now()}.png`
     link.href = canvasRef.current.toDataURL()
     link.click()
-  }
+  }, [])
 
-  const finishAndAnalyze = () => {
+  const finishAndAnalyze = useCallback(() => {
     localStorage.setItem('canvas_doodle', canvasRef.current.toDataURL('image/png'))
     navigate('/studio')
-  }
+  }, [navigate])
 
-  /* ── 공용 색상 피커 콘텐츠 ── */
+  // ── 공용 색상 피커 콘텐츠 ──
   const ColorPickerContent = () => (
     <>
       <div className="w-full h-12 rounded-xl sticker-shadow" style={{ backgroundColor: activeColor }} />
@@ -313,15 +340,21 @@ export default function Canvas() {
     </>
   )
 
-  /* ── 공용 스타일 상수 ── */
   const toolBtnBase     = 'flex items-center justify-center min-h-[48px] min-w-[48px] rounded-full transition-all duration-150 active:scale-95'
   const toolBtnActive   = 'bg-[#FF8C42] text-[#6A2D00] shadow-[4px_4px_0px_0px_rgba(29,27,22,0.15)]'
   const toolBtnInactive = 'bg-[#F9F3EA] text-on-surface'
-
-  /* ── 오토하이드 트랜지션 클래스 ── */
-  const uiShowHide = isUIVisible
+  const uiShowHide      = isUIVisible
     ? 'opacity-100 translate-y-0 pointer-events-auto'
     : 'opacity-0 pointer-events-none'
+
+  const canvasStyle = {
+    cursor: activeTool === 'eraser' ? 'cell' : activeTool === 'finetip' ? 'copy' : 'crosshair',
+    touchAction: 'none',
+    background: '#FFF9F0',
+    userSelect: 'none',
+    WebkitUserSelect: 'none',
+    WebkitTouchCallout: 'none',
+  }
 
   return (
     <Layout>
@@ -331,11 +364,13 @@ export default function Canvas() {
       <div className="md:hidden flex flex-col min-h-[100svh] max-w-[414px] mx-auto px-4 pt-3 pb-[140px]"
         onClick={() => setIsUIVisible(true)}
       >
-        {/* 모바일 헤더 — 항상 표시 */}
+        {/* 모바일 헤더 — 버튼은 항상 표시 */}
         <div className="flex justify-between items-center mb-3"
           onClick={(e) => e.stopPropagation()}
         >
-          <h1 className={`font-headline text-2xl font-black text-on-background tracking-tighter transition-all duration-300 ${uiShowHide}`}>내 캔버스</h1>
+          <h1 className={`font-headline text-2xl font-black text-on-background tracking-tighter transition-all duration-300 ${uiShowHide}`}>
+            내 캔버스
+          </h1>
           <div className="flex gap-2">
             <button onClick={saveToJournal}
               className={`${toolBtnBase} px-3 bg-surface-container-highest text-on-surface sticker-shadow-hover`}>
@@ -348,7 +383,7 @@ export default function Canvas() {
           </div>
         </div>
 
-        {/* 모바일 캔버스: h-[60svh] 정사각형 */}
+        {/* 모바일 캔버스 */}
         <div className="w-full rounded-2xl overflow-hidden border-4 border-surface-container-high sticker-shadow select-none"
           style={{ height: '60svh' }}
           onClick={(e) => e.stopPropagation()}
@@ -359,7 +394,7 @@ export default function Canvas() {
             height={CANVAS_SIZE}
             className="w-full h-full block"
             onContextMenu={(e) => e.preventDefault()}
-            style={{ cursor: activeTool === 'eraser' ? 'cell' : activeTool === 'finetip' ? 'copy' : 'crosshair', touchAction: 'none', background: '#FFF9F0', userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}
+            style={canvasStyle}
             onMouseDown={startDraw}
             onMouseMove={draw}
             onMouseUp={stopDraw}
@@ -367,9 +402,8 @@ export default function Canvas() {
           />
         </div>
 
-        {/* 드로잉 중 힌트 */}
         {!isUIVisible && (
-          <div className="mt-3 flex justify-center">
+          <div className="mt-3 flex justify-center pointer-events-none">
             <span className="text-xs text-on-surface-variant/60 font-medium">화면을 탭하면 도구가 나타나요</span>
           </div>
         )}
@@ -381,14 +415,12 @@ export default function Canvas() {
           style={{ backgroundColor: 'rgba(237,231,223,0.97)', backdropFilter: 'blur(20px)' }}>
           <div className="flex items-center gap-2 px-3 py-2 min-w-max">
 
-            {/* 실행 취소 / 다시 실행 / 지우기 */}
             <button onClick={undo} className="material-symbols-outlined min-w-[48px] min-h-[48px] flex items-center justify-center rounded-full text-on-surface-variant transition-colors hover:bg-surface-variant text-xl">undo</button>
             <button onClick={redo} className="material-symbols-outlined min-w-[48px] min-h-[48px] flex items-center justify-center rounded-full text-on-surface-variant transition-colors hover:bg-surface-variant text-xl">redo</button>
             <button onClick={clearCanvas} className="material-symbols-outlined min-w-[48px] min-h-[48px] flex items-center justify-center rounded-full text-error transition-colors hover:bg-error/10 text-xl">delete</button>
 
             <div className="w-px h-8 bg-outline-variant/40 shrink-0" />
 
-            {/* 도구 */}
             {tools.map((tool) => (
               <button key={tool.key} onClick={() => setActiveTool(tool.key)}
                 className={`${toolBtnBase} ${activeTool === tool.key ? toolBtnActive : toolBtnInactive}`}>
@@ -398,7 +430,6 @@ export default function Canvas() {
 
             <div className="w-px h-8 bg-outline-variant/40 shrink-0" />
 
-            {/* 굵기 */}
             {brushSizes.map((sz, i) => (
               <button key={i} onClick={() => setActiveSize(i)}
                 className={`min-w-[40px] min-h-[48px] flex items-center justify-center transition-all ${activeSize === i ? 'outline outline-2 outline-offset-2 outline-primary rounded-full' : 'opacity-40'}`}>
@@ -408,7 +439,6 @@ export default function Canvas() {
 
             <div className="w-px h-8 bg-outline-variant/40 shrink-0" />
 
-            {/* 팔레트 */}
             {palette.map((color) => (
               <button key={color} onClick={() => setActiveColor(color)}
                 className={`w-9 h-9 rounded-full shrink-0 active:scale-90 transition-transform ${activeColor === color ? 'ring-2 ring-offset-1 ring-primary' : ''}`}
@@ -418,7 +448,6 @@ export default function Canvas() {
 
             <div className="w-px h-8 bg-outline-variant/40 shrink-0" />
 
-            {/* 커스텀 컬러 */}
             <div ref={mobilePickerRef} className="relative shrink-0">
               <button onClick={() => setShowColorPicker(v => !v)}
                 className="w-9 h-9 rounded-full sticker-shadow"
@@ -440,7 +469,7 @@ export default function Canvas() {
       <div className="hidden md:block">
         <div className="max-w-6xl mx-auto px-6 py-10">
 
-          {/* 데스크탑 헤더 — 제목/영감은 숨김 가능, 버튼은 항상 표시 */}
+          {/* 데스크탑 헤더 */}
           <div className="flex justify-between items-end gap-6 mb-8">
             <div className={`transition-all duration-300 ${uiShowHide}`}>
               <h1 className="font-headline text-5xl font-black text-on-background tracking-tighter mb-3">내 캔버스</h1>
@@ -463,10 +492,8 @@ export default function Canvas() {
             </div>
           </div>
 
-          {/* 데스크탑 워크스페이스: 캔버스 왼쪽, 툴바 오른쪽 */}
+          {/* 워크스페이스 */}
           <div className="grid grid-cols-[1fr_auto] gap-8 items-start">
-
-            {/* 캔버스 */}
             <div className="flex flex-col gap-4">
               <div className="w-full aspect-square bg-surface-container-low rounded-2xl overflow-hidden border-8 border-surface-container-high sticker-shadow max-w-[750px] select-none">
                 <canvas
@@ -475,18 +502,14 @@ export default function Canvas() {
                   height={CANVAS_SIZE}
                   className="w-full h-full block"
                   onContextMenu={(e) => e.preventDefault()}
-            style={{ cursor: activeTool === 'eraser' ? 'cell' : activeTool === 'finetip' ? 'copy' : 'crosshair', touchAction: 'none', background: '#FFF9F0', userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}
+                  style={canvasStyle}
                   onMouseDown={startDraw}
                   onMouseMove={draw}
                   onMouseUp={stopDraw}
                   onMouseLeave={stopDraw}
-                  onTouchStart={startDraw}
-                  onTouchMove={draw}
-                  onTouchEnd={stopDraw}
                 />
               </div>
 
-              {/* 캔버스 컨트롤 */}
               <div className={`flex justify-center transition-all duration-300 ${uiShowHide}`}>
                 <div className="flex items-center gap-1 px-4 py-2 rounded-full shadow-[4px_4px_0px_0px_rgba(29,27,22,0.15)]"
                   style={{ backgroundColor: 'rgba(255,249,240,0.95)', backdropFilter: 'blur(20px)', border: '1px solid rgba(221,193,179,0.2)' }}>
@@ -500,7 +523,6 @@ export default function Canvas() {
 
             {/* 데스크탑 사이드 툴바 */}
             <div className="flex flex-col gap-6 bg-surface-container-high p-6 rounded-2xl sticker-shadow w-52 sticky top-28">
-
               <div>
                 <h3 className="font-bold text-xs mb-4 uppercase tracking-wider text-on-surface-variant">그리기 도구</h3>
                 <div className="flex flex-col gap-2">
@@ -538,7 +560,6 @@ export default function Canvas() {
                 </div>
               </div>
 
-              {/* 데스크탑 커스텀 컬러 */}
               <div ref={pickerRef} className="relative pt-3 border-t border-outline-variant/20">
                 <h3 className="font-bold text-xs mb-3 uppercase tracking-wider text-on-surface-variant">현재 색상</h3>
                 <button onClick={() => setShowColorPicker(v => !v)}
@@ -558,7 +579,7 @@ export default function Canvas() {
             </div>
           </div>
 
-          {/* 데스크탑 벤토 */}
+          {/* 벤토 */}
           <section className="mt-16 grid grid-cols-3 gap-6">
             <div className="col-span-2 bg-secondary-container rounded-2xl p-8 sticker-shadow flex flex-col justify-between min-h-[200px] group overflow-hidden relative">
               <div className="relative z-10">

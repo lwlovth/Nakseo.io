@@ -26,11 +26,13 @@ jobs:
           cache: npm
 
       - run: npm ci
+        working-directory: 'Desktop/Claude Code'
       - run: npm run build
+        working-directory: 'Desktop/Claude Code'
 
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          path: 'Desktop/Claude Code/dist'
 
   deploy:
     needs: build

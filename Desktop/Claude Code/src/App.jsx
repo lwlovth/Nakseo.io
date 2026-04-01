@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { HashRouter, Routes, Route } from 'react-router-dom'
 import Home from './pages/Home'
 import Upload from './pages/Upload'
 import Market from './pages/Market'
@@ -9,7 +9,7 @@ import Community from './pages/Community'
 
 export default function App() {
   return (
-    <BrowserRouter basename="/Nakseo.io">
+    <HashRouter basename="/Nakseo.io">
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/community" element={<Community />} />
@@ -19,6 +19,6 @@ export default function App() {
         <Route path="/profile" element={<Profile />} />
         <Route path="/shop" element={<Shop />} />
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
   )
 }

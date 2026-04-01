@@ -177,7 +177,7 @@ function BottomNav() {
 // ── Layout ─────────────────────────────────────────────────────
 export default function Layout({ children }) {
   return (
-    <div className="bg-surface text-on-background font-body min-h-screen">
+    <div className="bg-surface text-on-background font-body min-h-[100svh]">
       <TopNav />
       <div className="flex">
         <Sidebar />

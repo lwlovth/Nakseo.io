@@ -11,7 +11,7 @@ function TopNav() {
 
   return (
     <nav
-      className={`w-full sticky top-0 z-50 backdrop-blur-md shadow-[4px_4px_0px_0px_rgba(29,27,22,0.15)] transition-transform duration-300 ease-in-out md:translate-y-0 ${isDrawing ? '-translate-y-full' : 'translate-y-0'}`}
+      className={`w-full fixed top-0 left-0 right-0 z-50 backdrop-blur-md shadow-[4px_4px_0px_0px_rgba(29,27,22,0.15)] transition-transform duration-300 ease-in-out md:translate-y-0 ${isDrawing ? '-translate-y-full' : 'translate-y-0'}`}
       style={{ backgroundColor: 'rgba(255,249,240,0.8)' }}
     >
       <div className="flex justify-between items-center px-8 py-4">
@@ -184,7 +184,7 @@ export default function Layout({ children }) {
       <TopNav />
       <div className="flex">
         <Sidebar />
-        <main className="flex-1 pb-20 md:pb-0">
+        <main className="flex-1 pt-[60px] pb-20 md:pb-0">
           {children}
         </main>
       </div>

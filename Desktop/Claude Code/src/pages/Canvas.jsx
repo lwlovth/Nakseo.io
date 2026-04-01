@@ -42,6 +42,22 @@ export default function Canvas() {
     saveHistory()
   }, [])
 
+  /* ── passive:false 터치 이벤트 등록 (React 기본 passive 이벤트 우회) ── */
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const opts = { passive: false }
+    canvas.addEventListener('touchstart', startDraw, opts)
+    canvas.addEventListener('touchmove',  draw,      opts)
+    canvas.addEventListener('touchend',   stopDraw)
+    return () => {
+      canvas.removeEventListener('touchstart', startDraw)
+      canvas.removeEventListener('touchmove',  draw)
+      canvas.removeEventListener('touchend',   stopDraw)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTool, activeColor, activeSize])
+
   /* ── 히스토리 ── */
   const saveHistory = useCallback(() => {
     const canvas = canvasRef.current
@@ -183,7 +199,8 @@ export default function Canvas() {
 
   /* ── 드로잉 이벤트 ── */
   const startDraw = (e) => {
-    e.preventDefault()
+    // 터치 시 페이지 스크롤만 방지 (드로잉 이벤트는 유지)
+    if (e.cancelable) e.preventDefault()
     setIsUIVisible(false)
     setIsDrawing(true)
     const pos = getPos(e)
@@ -202,7 +219,7 @@ export default function Canvas() {
   }
 
   const draw = (e) => {
-    e.preventDefault()
+    if (e.cancelable) e.preventDefault()
     if (!isDrawing.current || !lastPoint.current) return
     if (activeTool === 'finetip') return
     const ctx = canvasRef.current.getContext('2d')
@@ -346,9 +363,6 @@ export default function Canvas() {
             onMouseMove={draw}
             onMouseUp={stopDraw}
             onMouseLeave={stopDraw}
-            onTouchStart={startDraw}
-            onTouchMove={draw}
-            onTouchEnd={stopDraw}
           />
         </div>
 
@@ -483,7 +497,7 @@ export default function Canvas() {
             </div>
 
             {/* 데스크탑 사이드 툴바 */}
-            <div className={`flex flex-col gap-6 bg-surface-container-high p-6 rounded-2xl sticker-shadow w-52 sticky top-28 transition-all duration-300 ${isUIVisible ? 'opacity-100' : 'opacity-20 hover:opacity-100'}`}>
+            <div className="flex flex-col gap-6 bg-surface-container-high p-6 rounded-2xl sticker-shadow w-52 sticky top-28">
 
               <div>
                 <h3 className="font-bold text-xs mb-4 uppercase tracking-wider text-on-surface-variant">그리기 도구</h3>

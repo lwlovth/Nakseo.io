@@ -20,7 +20,6 @@ export default function Canvas() {
   const [activeSize,      setActiveSize]      = useState(1)
   const [showColorPicker, setShowColorPicker] = useState(false)
   const [hexInput,        setHexInput]        = useState('#9B4500')
-  const [isUIVisible,     setIsUIVisible]     = useState(true)
   const [isMobile,        setIsMobile]        = useState(() =>
     typeof window !== 'undefined' && window.innerWidth < 768
   )
@@ -194,7 +193,6 @@ export default function Canvas() {
   // 드로잉 핸들러 — deps []로 한 번만 생성, ref로 최신값 읽음
   const startDraw = useCallback((e) => {
     if (e.cancelable) e.preventDefault()
-    setIsUIVisible(false)
     setGlobalDrawing(true)
     const pos = getPos(e)
     if (toolRef.current === 'finetip') { floodFill(pos.x, pos.y); return }
@@ -234,7 +232,6 @@ export default function Canvas() {
     isDrawingRef.current = false
     lastPoint.current    = null
     saveHistory()
-    setIsUIVisible(true)
     setGlobalDrawing(false)
   }, [saveHistory, setGlobalDrawing])
 
@@ -368,9 +365,7 @@ export default function Canvas() {
       {/* ══════════ 모바일 / 데스크탑 조건부 렌더링 — 캔버스를 DOM에 하나만 유지 ══════════ */}
       {isMobile ? (
       <>
-      <div className="flex flex-col max-w-[414px] mx-auto px-4 pt-3 pb-[140px]"
-        onClick={() => setIsUIVisible(true)}
-      >
+      <div className="flex flex-col max-w-[414px] mx-auto px-4 pt-3 pb-[140px]">
         {/* 헤더 */}
         <div className="flex justify-between items-center mb-3" onClick={(e) => e.stopPropagation()}>
           <h1 className="font-headline text-2xl font-black text-on-background tracking-tighter">내 캔버스</h1>
@@ -392,15 +387,10 @@ export default function Canvas() {
           {CanvasElement}
         </div>
 
-        {!isUIVisible && (
-          <div className="mt-3 flex justify-center pointer-events-none">
-            <span className="text-xs text-on-surface-variant/60 font-medium">화면을 탭하면 도구가 나타나요</span>
-          </div>
-        )}
       </div>
 
       {/* 모바일 하단 툴바 */}
-      <div className={`fixed bottom-[60px] left-0 right-0 z-40 px-3 pb-2 transition-transform duration-300 ease-in-out ${isUIVisible ? 'translate-y-0' : 'translate-y-full'}`}>
+      <div className="fixed bottom-[60px] left-0 right-0 z-40 px-3 pb-2">
         <div className="max-w-[414px] mx-auto rounded-2xl sticker-shadow overflow-x-auto"
           style={{ backgroundColor: 'rgba(237,231,223,0.97)', backdropFilter: 'blur(20px)' }}>
           <div className="flex items-center gap-2 px-3 py-2 min-w-max">

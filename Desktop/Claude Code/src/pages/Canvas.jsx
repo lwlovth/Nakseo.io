@@ -365,7 +365,7 @@ export default function Canvas() {
       {/* ══════════ 모바일 / 데스크탑 조건부 렌더링 — 캔버스를 DOM에 하나만 유지 ══════════ */}
       {isMobile ? (
       <>
-      <div className="flex flex-col max-w-[414px] mx-auto px-4 pt-3 pb-[140px]">
+      <div className="flex flex-col max-w-[414px] mx-auto px-4 pt-3 pb-[220px]">
         {/* 헤더 */}
         <div className="flex justify-between items-center mb-3" onClick={(e) => e.stopPropagation()}>
           <h1 className="font-headline text-2xl font-black text-on-background tracking-tighter">내 캔버스</h1>
@@ -389,48 +389,61 @@ export default function Canvas() {
 
       </div>
 
-      {/* 모바일 하단 툴바 */}
+      {/* 모바일 하단 툴바 — 2행 */}
       <div className="fixed bottom-[60px] left-0 right-0 z-40 px-3 pb-2">
-        <div className="max-w-[414px] mx-auto rounded-2xl sticker-shadow overflow-x-auto"
+        <div className="max-w-[414px] mx-auto rounded-2xl sticker-shadow flex flex-col gap-0 px-3 py-2"
           style={{ backgroundColor: 'rgba(237,231,223,0.97)', backdropFilter: 'blur(20px)' }}>
-          <div className="flex items-center gap-2 px-3 py-2 min-w-max">
-            <button onClick={undo} className="material-symbols-outlined min-w-[48px] min-h-[48px] flex items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-variant transition-colors text-xl">undo</button>
-            <button onClick={redo} className="material-symbols-outlined min-w-[48px] min-h-[48px] flex items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-variant transition-colors text-xl">redo</button>
-            <button onClick={clearCanvas} className="material-symbols-outlined min-w-[48px] min-h-[48px] flex items-center justify-center rounded-full text-error hover:bg-error/10 transition-colors text-xl">delete</button>
-            <div className="w-px h-8 bg-outline-variant/40 shrink-0" />
-            {tools.map((tool) => (
-              <button key={tool.key} onClick={() => setActiveTool(tool.key)}
-                className={`${toolBtnBase} ${activeTool===tool.key ? toolBtnActive : toolBtnInactive}`}>
-                <span className="material-symbols-outlined text-xl">{tool.icon}</span>
-              </button>
-            ))}
-            <div className="w-px h-8 bg-outline-variant/40 shrink-0" />
-            {brushSizes.map((sz, i) => (
-              <button key={i} onClick={() => setActiveSize(i)}
-                className={`min-w-[40px] min-h-[48px] flex items-center justify-center transition-all ${activeSize===i ? 'outline outline-2 outline-offset-2 outline-primary rounded-full' : 'opacity-40'}`}>
-                <span className="rounded-full bg-on-surface block shrink-0" style={{ width: sz*2.5+4, height: sz*2.5+4 }} />
-              </button>
-            ))}
-            <div className="w-px h-8 bg-outline-variant/40 shrink-0" />
-            {palette.map((color) => (
-              <button key={color} onClick={() => setActiveColor(color)}
-                className={`w-9 h-9 rounded-full shrink-0 active:scale-90 transition-transform ${activeColor===color ? 'ring-2 ring-offset-1 ring-primary' : ''}`}
-                style={{ backgroundColor: color }}
-              />
-            ))}
-            <div className="w-px h-8 bg-outline-variant/40 shrink-0" />
-            <div ref={mobilePickerRef} className="relative shrink-0">
+
+          {/* 1행: 액션 + 도구 선택 */}
+          <div className="flex items-center justify-between">
+            <div className="flex gap-1">
+              <button onClick={undo} className="material-symbols-outlined w-10 h-10 flex items-center justify-center rounded-full text-on-surface-variant active:bg-surface-variant text-xl">undo</button>
+              <button onClick={redo} className="material-symbols-outlined w-10 h-10 flex items-center justify-center rounded-full text-on-surface-variant active:bg-surface-variant text-xl">redo</button>
+              <button onClick={clearCanvas} className="material-symbols-outlined w-10 h-10 flex items-center justify-center rounded-full text-error active:bg-error/10 text-xl">delete</button>
+            </div>
+            <div className="w-px h-6 bg-outline-variant/40 shrink-0" />
+            <div className="flex gap-1">
+              {tools.map((tool) => (
+                <button key={tool.key} onClick={() => setActiveTool(tool.key)}
+                  className={`w-10 h-10 flex items-center justify-center rounded-full transition-all duration-150 active:scale-95 ${activeTool===tool.key ? toolBtnActive : toolBtnInactive}`}>
+                  <span className="material-symbols-outlined text-xl">{tool.icon}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="h-px bg-outline-variant/30 my-1" />
+
+          {/* 2행: 굵기 + 색상 팔레트 */}
+          <div className="flex items-center gap-2">
+            <div className="flex gap-1 items-center shrink-0">
+              {brushSizes.map((sz, i) => (
+                <button key={i} onClick={() => setActiveSize(i)}
+                  className={`w-10 h-10 flex items-center justify-center rounded-full transition-all ${activeSize===i ? 'bg-surface-container-highest ring-2 ring-primary' : 'opacity-50'}`}>
+                  <span className="rounded-full bg-on-surface block" style={{ width: sz*2.5+4, height: sz*2.5+4 }} />
+                </button>
+              ))}
+            </div>
+            <div className="w-px h-6 bg-outline-variant/40 shrink-0" />
+            <div ref={mobilePickerRef} className="flex flex-wrap gap-1.5 flex-1 relative">
+              {palette.map((color) => (
+                <button key={color} onClick={() => setActiveColor(color)}
+                  className={`w-8 h-8 rounded-full shrink-0 active:scale-90 transition-transform ${activeColor===color ? 'ring-2 ring-offset-1 ring-primary' : ''}`}
+                  style={{ backgroundColor: color }}
+                />
+              ))}
               <button onClick={() => setShowColorPicker(v => !v)}
-                className="w-9 h-9 rounded-full sticker-shadow"
+                className="w-8 h-8 rounded-full sticker-shadow shrink-0 active:scale-90 transition-transform"
                 style={{ backgroundColor: activeColor, border: '2.5px solid rgba(255,255,255,0.7)' }}
               />
               {showColorPicker && (
-                <div className="absolute bottom-full right-0 mb-3 z-50 w-64 bg-surface-container-high rounded-xl sticker-shadow p-5 flex flex-col gap-4">
+                <div className="absolute bottom-full left-0 mb-3 z-50 w-64 bg-surface-container-high rounded-xl sticker-shadow p-5 flex flex-col gap-4">
                   <ColorPickerContent />
                 </div>
               )}
             </div>
           </div>
+
         </div>
       </div>
 

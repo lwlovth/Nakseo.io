@@ -143,7 +143,7 @@ function BottomNav() {
       className="fixed bottom-0 left-0 right-0 md:hidden backdrop-blur-md px-6 py-3 flex justify-around items-center z-50"
       style={{ backgroundColor: 'rgba(243,237,228,0.8)' }}
     >
-      {bottomItems.map((item, i) => {
+      {bottomItems.map((item) => {
         if (!item) {
           return (
             <div key="fab" className="relative -top-8">
@@ -177,7 +177,7 @@ function BottomNav() {
 // ── Layout ─────────────────────────────────────────────────────
 export default function Layout({ children }) {
   return (
-    <div className="bg-surface text-on-background font-body min-h-[100svh]">
+    <div className="paper-bg text-on-background font-body min-h-[100svh]">
       <TopNav />
       <div className="flex">
         <Sidebar />

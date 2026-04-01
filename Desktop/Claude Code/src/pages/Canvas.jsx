@@ -358,7 +358,7 @@ export default function Canvas() {
         <div className="relative grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 md:gap-8 items-start">
 
           {/* Canvas + Controls */}
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-3 w-full max-w-[500px] md:max-w-none mx-auto">
             <div className="w-full bg-surface-container-low rounded-lg p-1 sticker-shadow overflow-hidden border-4 md:border-8 border-surface-container-high">
               <canvas
                 ref={canvasRef}

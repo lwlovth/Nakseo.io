@@ -343,9 +343,6 @@ export default function Canvas() {
   const toolBtnBase     = 'flex items-center justify-center min-h-[48px] min-w-[48px] rounded-full transition-all duration-150 active:scale-95'
   const toolBtnActive   = 'bg-[#FF8C42] text-[#6A2D00] shadow-[4px_4px_0px_0px_rgba(29,27,22,0.15)]'
   const toolBtnInactive = 'bg-[#F9F3EA] text-on-surface'
-  const uiShowHide      = isUIVisible
-    ? 'opacity-100 translate-y-0 pointer-events-auto'
-    : 'opacity-0 pointer-events-none'
 
   const canvasStyle = {
     cursor: activeTool === 'eraser' ? 'cell' : activeTool === 'finetip' ? 'copy' : 'crosshair',
@@ -368,7 +365,7 @@ export default function Canvas() {
         <div className="flex justify-between items-center mb-3"
           onClick={(e) => e.stopPropagation()}
         >
-          <h1 className={`font-headline text-2xl font-black text-on-background tracking-tighter transition-all duration-300 ${uiShowHide}`}>
+          <h1 className="font-headline text-2xl font-black text-on-background tracking-tighter">
             내 캔버스
           </h1>
           <div className="flex gap-2">
@@ -471,7 +468,7 @@ export default function Canvas() {
 
           {/* 데스크탑 헤더 */}
           <div className="flex justify-between items-end gap-6 mb-8">
-            <div className={`transition-all duration-300 ${uiShowHide}`}>
+            <div>
               <h1 className="font-headline text-5xl font-black text-on-background tracking-tighter mb-3">내 캔버스</h1>
               <div className="flex items-center gap-3 bg-tertiary-container/20 text-on-tertiary-container px-5 py-2.5 rounded-full border border-tertiary-container/30 text-base keep-all">
                 <span className="material-symbols-outlined text-xl">lightbulb</span>
@@ -510,7 +507,7 @@ export default function Canvas() {
                 />
               </div>
 
-              <div className={`flex justify-center transition-all duration-300 ${uiShowHide}`}>
+              <div className="flex justify-center">
                 <div className="flex items-center gap-1 px-4 py-2 rounded-full shadow-[4px_4px_0px_0px_rgba(29,27,22,0.15)]"
                   style={{ backgroundColor: 'rgba(255,249,240,0.95)', backdropFilter: 'blur(20px)', border: '1px solid rgba(221,193,179,0.2)' }}>
                   <button onClick={undo} title="실행 취소" className="material-symbols-outlined min-w-[48px] min-h-[48px] flex items-center justify-center hover:bg-surface-variant rounded-full text-on-surface-variant transition-colors">undo</button>

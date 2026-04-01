@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Layout from '../components/Layout'
+import { useUI } from '../contexts/UIContext'
 
 const tools = [
   { key: 'pencil',   icon: 'edit',              label: '연필'  },
@@ -20,6 +21,7 @@ export default function Canvas() {
   const [showColorPicker, setShowColorPicker] = useState(false)
   const [hexInput,        setHexInput]        = useState('#9B4500')
   const [isUIVisible,     setIsUIVisible]     = useState(true)
+  const { setIsDrawing } = useUI()
 
   const canvasRef       = useRef(null)
   const pickerRef       = useRef(null)
@@ -183,6 +185,7 @@ export default function Canvas() {
   const startDraw = (e) => {
     e.preventDefault()
     setIsUIVisible(false)
+    setIsDrawing(true)
     const pos = getPos(e)
     if (activeTool === 'finetip') { floodFill(pos.x, pos.y); return }
     isDrawing.current  = true
@@ -222,6 +225,7 @@ export default function Canvas() {
     lastPoint.current = null
     saveHistory()
     setIsUIVisible(true)
+    setIsDrawing(false)
   }
 
   /* ── HEX 입력 ── */

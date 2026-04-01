@@ -1,15 +1,17 @@
 import { Link, useLocation } from 'react-router-dom'
 import { GNB_ITEMS, LNB_MAP, SECTION_CONFIG } from '../constants/navigation'
+import { useUI } from '../contexts/UIContext'
 
 // ── GNB (Top Navigation) ───────────────────────────────────────
 function TopNav() {
   const location = useLocation()
+  const { isDrawing } = useUI()
 
   const isGnbActive = (item) => item.match.includes(location.pathname)
 
   return (
     <nav
-      className="w-full sticky top-0 z-50 backdrop-blur-md shadow-[4px_4px_0px_0px_rgba(29,27,22,0.15)]"
+      className={`w-full sticky top-0 z-50 backdrop-blur-md shadow-[4px_4px_0px_0px_rgba(29,27,22,0.15)] transition-transform duration-300 ease-in-out md:translate-y-0 ${isDrawing ? '-translate-y-full' : 'translate-y-0'}`}
       style={{ backgroundColor: 'rgba(255,249,240,0.8)' }}
     >
       <div className="flex justify-between items-center px-8 py-4">
@@ -128,6 +130,7 @@ function Sidebar() {
 // ── Bottom Nav (Mobile Only) ───────────────────────────────────
 function BottomNav() {
   const location = useLocation()
+  const { isDrawing } = useUI()
   const path = location.pathname
 
   const bottomItems = [
@@ -140,7 +143,7 @@ function BottomNav() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 md:hidden backdrop-blur-md px-6 py-3 flex justify-around items-center z-50"
+      className={`fixed bottom-0 left-0 right-0 md:hidden backdrop-blur-md px-6 py-3 flex justify-around items-center z-50 transition-transform duration-300 ease-in-out ${isDrawing ? 'translate-y-full' : 'translate-y-0'}`}
       style={{ backgroundColor: 'rgba(243,237,228,0.8)' }}
     >
       {bottomItems.map((item) => {

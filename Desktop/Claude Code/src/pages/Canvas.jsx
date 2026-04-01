@@ -21,6 +21,9 @@ export default function Canvas() {
   const [showColorPicker, setShowColorPicker] = useState(false)
   const [hexInput,        setHexInput]        = useState('#9B4500')
   const [isUIVisible,     setIsUIVisible]     = useState(true)
+  const [isMobile,        setIsMobile]        = useState(() =>
+    typeof window !== 'undefined' && window.innerWidth < 768
+  )
 
   const { setIsDrawing: setGlobalDrawing } = useUI()
 
@@ -41,6 +44,14 @@ export default function Canvas() {
   useEffect(() => { toolRef.current  = activeTool  }, [activeTool])
   useEffect(() => { colorRef.current = activeColor }, [activeColor])
   useEffect(() => { sizeRef.current  = activeSize  }, [activeSize])
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)')
+    setIsMobile(mq.matches)
+    const handler = (e) => setIsMobile(e.matches)
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [])
 
   // 캔버스 초기화
   useEffect(() => {
@@ -354,8 +365,10 @@ export default function Canvas() {
   return (
     <Layout>
 
-      {/* ══════════ 모바일 (md 미만) ══════════ */}
-      <div className="md:hidden flex flex-col max-w-[414px] mx-auto px-4 pt-3 pb-[140px]"
+      {/* ══════════ 모바일 / 데스크탑 조건부 렌더링 — 캔버스를 DOM에 하나만 유지 ══════════ */}
+      {isMobile ? (
+      <>
+      <div className="flex flex-col max-w-[414px] mx-auto px-4 pt-3 pb-[140px]"
         onClick={() => setIsUIVisible(true)}
       >
         {/* 헤더 */}
@@ -387,7 +400,7 @@ export default function Canvas() {
       </div>
 
       {/* 모바일 하단 툴바 */}
-      <div className={`md:hidden fixed bottom-[60px] left-0 right-0 z-40 px-3 pb-2 transition-transform duration-300 ease-in-out ${isUIVisible ? 'translate-y-0' : 'translate-y-full'}`}>
+      <div className={`fixed bottom-[60px] left-0 right-0 z-40 px-3 pb-2 transition-transform duration-300 ease-in-out ${isUIVisible ? 'translate-y-0' : 'translate-y-full'}`}>
         <div className="max-w-[414px] mx-auto rounded-2xl sticker-shadow overflow-x-auto"
           style={{ backgroundColor: 'rgba(237,231,223,0.97)', backdropFilter: 'blur(20px)' }}>
           <div className="flex items-center gap-2 px-3 py-2 min-w-max">
@@ -431,8 +444,10 @@ export default function Canvas() {
         </div>
       </div>
 
-      {/* ══════════ 데스크탑 (md 이상) ══════════ */}
-      <div className="hidden md:block">
+      </>
+      ) : (
+      /* ══════════ 데스크탑 (md 이상) ══════════ */
+      <div>
         <div className="max-w-6xl mx-auto px-6 py-10">
           <div className="flex justify-between items-end gap-6 mb-8">
             <div>
@@ -547,6 +562,7 @@ export default function Canvas() {
           </section>
         </div>
       </div>
+      )}
 
     </Layout>
   )

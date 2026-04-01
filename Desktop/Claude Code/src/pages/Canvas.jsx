@@ -349,7 +349,7 @@ export default function Canvas() {
         </div>
 
         {/* 모바일 캔버스: h-[60svh] 정사각형 */}
-        <div className="w-full rounded-2xl overflow-hidden border-4 border-surface-container-high sticker-shadow"
+        <div className="w-full rounded-2xl overflow-hidden border-4 border-surface-container-high sticker-shadow select-none"
           style={{ height: '60svh' }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -358,7 +358,8 @@ export default function Canvas() {
             width={CANVAS_SIZE}
             height={CANVAS_SIZE}
             className="w-full h-full block"
-            style={{ cursor: activeTool === 'eraser' ? 'cell' : activeTool === 'finetip' ? 'copy' : 'crosshair', touchAction: 'none', background: '#FFF9F0' }}
+            onContextMenu={(e) => e.preventDefault()}
+            style={{ cursor: activeTool === 'eraser' ? 'cell' : activeTool === 'finetip' ? 'copy' : 'crosshair', touchAction: 'none', background: '#FFF9F0', userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}
             onMouseDown={startDraw}
             onMouseMove={draw}
             onMouseUp={stopDraw}
@@ -467,13 +468,14 @@ export default function Canvas() {
 
             {/* 캔버스 */}
             <div className="flex flex-col gap-4">
-              <div className="w-full aspect-square bg-surface-container-low rounded-2xl overflow-hidden border-8 border-surface-container-high sticker-shadow max-w-[750px]">
+              <div className="w-full aspect-square bg-surface-container-low rounded-2xl overflow-hidden border-8 border-surface-container-high sticker-shadow max-w-[750px] select-none">
                 <canvas
                   ref={canvasRef}
                   width={CANVAS_SIZE}
                   height={CANVAS_SIZE}
                   className="w-full h-full block"
-                  style={{ cursor: activeTool === 'eraser' ? 'cell' : activeTool === 'finetip' ? 'copy' : 'crosshair', touchAction: 'none', background: '#FFF9F0' }}
+                  onContextMenu={(e) => e.preventDefault()}
+            style={{ cursor: activeTool === 'eraser' ? 'cell' : activeTool === 'finetip' ? 'copy' : 'crosshair', touchAction: 'none', background: '#FFF9F0', userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}
                   onMouseDown={startDraw}
                   onMouseMove={draw}
                   onMouseUp={stopDraw}

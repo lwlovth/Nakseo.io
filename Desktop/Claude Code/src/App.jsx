@@ -9,7 +9,7 @@ import Community from './pages/Community'
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/Nakseo.io">
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/community" element={<Community />} />
